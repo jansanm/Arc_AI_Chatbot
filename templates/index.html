@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAI - AI Healthcare Assistant</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --bg-card: #ffffff;
+            --bg-input: #ffffff;
+            
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            
+            --border: #e2e8f0;
+            --border-light: #cbd5e1;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --gradient-secondary: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            --gradient-accent: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border);
+            padding: 2rem;
+            width: 350px;
+            height: 100vh;
+            overflow-y: auto;
+            flex-shrink: 0;
+            box-shadow: var(--shadow);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .logo-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .logo-text p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .language-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .lang-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .lang-btn.active {
+            background: var(--gradient-primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .lang-btn:hover:not(.active) {
+            background: var(--bg-tertiary);
+            border-color: var(--border-light);
+        }
+
+        .symptoms-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .symptom-chip {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .symptom-chip:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .disclaimer-box {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .disclaimer-box h4 {
+            color: #f59e0b;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .disclaimer-box p {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            box-shadow: var(--shadow);
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chat-title h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--success);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            min-height: 0;
+            width: 100%;
+        }
+
+        .message {
+            margin-bottom: 1.5rem;
+            max-width: 80%;
+            animation: slideInUp 0.3s ease;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            width: fit-content;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            margin-left: auto;
+        }
+
+        .bot-message {
+            margin-right: auto;
+        }
+
+        .message-content {
+            padding: 1rem 1.5rem;
+            border-radius: 16px;
+            position: relative;
+            box-shadow: var(--shadow);
+            max-width: 100%;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .user-message .message-content {
+            background: var(--gradient-primary);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-message .message-content {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+            box-shadow: var(--shadow);
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .message-text {
+            line-height: 1.6;
+            font-size: 0.95rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: pre-wrap;
+            display: block;
+            width: 100%;
+        }
+
+        /* Medical Advice Cards */
+        .medical-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: var(--shadow);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .severity-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .severity-mild {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .severity-moderate {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .severity-high {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .advice-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .advice-item {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1rem;
+            border-left: 4px solid;
+            box-shadow: var(--shadow);
+        }
+
+        .advice-item.medications {
+            border-left-color: var(--primary);
+        }
+
+        .advice-item.precautions {
+            border-left-color: var(--warning);
+        }
+
+        .advice-item.treatment {
+            border-left-color: var(--success);
+        }
+
+        .advice-item.diet {
+            border-left-color: var(--info);
+        }
+
+        .advice-item.doctor {
+            border-left-color: var(--danger);
+        }
+
+        .advice-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .advice-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .advice-list li {
+            padding: 0.25rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .advice-list li::before {
+            content: "•";
+            color: var(--primary);
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        .input-area {
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 2rem;
+            flex-shrink: 0;
+            box-shadow: var(--shadow);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0.75rem;
+            box-shadow: var(--shadow);
+        }
+
+        .input-field {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            resize: none;
+            min-height: 24px;
+            max-height: 120px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .input-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px;
+            height: 44px;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn.recording {
+            background: var(--danger);
+            animation: pulse 1s infinite;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border);
+        }
+
+        @media (max-width: 1024px) {
+            .app-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .main-content {
+                min-width: 0;
+            }
+
+            .symptoms-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .message {
+                max-width: 95%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                padding: 1rem;
+            }
+
+            .chat-header {
+                padding: 1rem;
+            }
+
+            .chat-messages {
+                padding: 1rem;
+                min-height: 0;
+            }
+
+            .input-area {
+                padding: 1rem;
+            }
+
+            .message {
+                max-width: 95%;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+            }
+
+            .message-text {
+                font-size: 0.9rem;
+            }
+
+            .symptoms-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .advice-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .symptoms-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .input-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>MedAI</h1>
+                    <p>AI Healthcare Assistant</p>
+                </div>
+            </div>
+
+            <div class="language-grid">
+                <h3 class="section-title">Language</h3>
+                <button class="lang-btn active" data-lang="english">
+                    <i class="fas fa-globe"></i> English
+                </button>
+                <button class="lang-btn" data-lang="hindi">
+                    <i class="fas fa-language"></i> हिन्दी
+                </button>
+                <button class="lang-btn" data-lang="kannada">
+                    <i class="fas fa-language"></i> ಕನ್ನಡ
+                </button>
+            </div>
+
+            <div class="symptoms-section">
+                <h3 class="section-title">Quick Symptoms</h3>
+                <div class="symptoms-grid">
+                    <div class="symptom-chip" onclick="addSymptom('headache')">
+                        <i class="fas fa-head-side-cough"></i> Headache
+                    </div>
+                    <div class="symptom-chip" onclick="addSymptom('fever')">
+                        <i class="fas fa-thermometer-half"></i> Fever
+                    </div>
+                    <div class="symptom-chip" onclick="addSymptom('cough')">
+                        <i class="fas fa-lungs"></i> Cough
+                    </div>
+                    <div class="symptom-chip" onclick="addSymptom('sore throat')">
+                        <i class="fas fa-comment-medical"></i> Sore Throat
+                    </div>
+                    <div class="symptom-chip" onclick="addSymptom('stomach pain')">
+                        <i class="fas fa-stomach"></i> Stomach Pain
+                    </div>
+                    <div class="symptom-chip" onclick="addSymptom('back pain')">
+                        <i class="fas fa-user-injured"></i> Back Pain
+                    </div>
+                </div>
+            </div>
+
+            <div class="disclaimer-box">
+                <h4>
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Important Notice
+                </h4>
+                <p>This AI assistant provides informational guidance only. Always consult healthcare professionals for proper diagnosis and treatment.</p>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chat-header">
+                <div class="chat-title">
+                    <i class="fas fa-comments"></i>
+                    <h2>Medical Consultation</h2>
+                </div>
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>AI Assistant Online</span>
+                </div>
+            </div>
+
+            <div id="chatMessages" class="chat-messages">
+                <div class="message bot-message">
+                    <div class="message-content">
+                        <div class="message-header">
+                            <i class="fas fa-robot"></i>
+                            <span>MedAI Assistant</span>
+                        </div>
+                        <div class="message-text">
+                            Hello! I'm your AI Healthcare Assistant. I can help you understand your symptoms and provide medical guidance. Please describe what you're experiencing, and I'll analyze it for you.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="input-container">
+                    <textarea 
+                        id="messageInput" 
+                        class="input-field" 
+                        placeholder="Describe your symptoms (e.g., I have a headache and fever)..."
+                        rows="1"
+                        onkeypress="handleKeyPress(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" id="voiceBtn" onclick="toggleVoiceRecording()" title="Voice Input">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <button class="btn btn-primary" onclick="sendMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLanguage = 'english';
+        let isRecording = false;
+        let mediaRecorder;
+        let mediaStream;
+        let audioChunks = [];
+
+        document.querySelectorAll('.lang-btn').forEach((btn) => {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.lang-btn').forEach((b) => b.classList.remove('active'));
+                this.classList.add('active');
+                currentLanguage = this.dataset.lang;
+            });
+        });
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+        }
+
+        function addSymptom(symptom) {
+            const input = document.getElementById('messageInput');
+            const currentValue = input.value.trim();
+            if (currentValue) {
+                input.value = currentValue + ', ' + symptom;
+            } else {
+                input.value = symptom;
+            }
+            input.focus();
+            autoResize(input);
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+
+            if (!message) return;
+
+            addMessage(message, 'user');
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+
+            showLoading();
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        language: currentLanguage,
+                    }),
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    if (data.is_conversational) {
+                        addMessage(data.response.message, 'bot');
+                    } else {
+                        addMedicalAdvice(data.response);
+                    }
+                } else {
+                    addMessage('Sorry, I encountered an error: ' + data.error, 'bot');
+                }
+            } catch (error) {
+                hideLoading();
+                addMessage("Sorry, I'm having trouble connecting. Please try again.", 'bot');
+                console.error('Error:', error);
+            }
+        }
+
+        function addMessage(message, sender) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+
+            const icon = sender === 'user' ? 'fas fa-user' : 'fas fa-robot';
+            const name = sender === 'user' ? 'You' : 'MedAI Assistant';
+
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="message-header">
+                        <i class="${icon}"></i>
+                        <span>${name}</span>
+                    </div>
+                    <div class="message-text">${message}</div>
+                </div>
+            `;
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function addMedicalAdvice(advice) {
+            const chatMessages = document.getElementById('chatMessages');
+            const adviceDiv = document.createElement('div');
+            adviceDiv.className = 'message bot-message';
+
+            let html = `
+                <div class="message-content">
+                    <div class="message-header">
+                        <i class="fas fa-robot"></i>
+                        <span>MedAI Assistant</span>
+                    </div>
+                    <div class="message-text">
+            `;
+
+            if (advice.conditions && advice.conditions.length > 0) {
+                advice.conditions.forEach((condition) => {
+                    html += `
+                        <div class="medical-card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-heartbeat"></i>
+                                    <span>${condition.disease} (${condition.symptom})</span>
+                                </div>
+                                <span class="severity-badge severity-${condition.severity.toLowerCase().replace(' ', '-')}">${condition.severity}</span>
+                            </div>
+                    `;
+
+                    if (condition.description) {
+                        html += `<p style="margin-bottom: 1rem; color: var(--text-secondary); line-height: 1.6;">${condition.description}</p>`;
+                    }
+
+                    html += `<div class="advice-grid">`;
+
+                    if (condition.medications && condition.medications.length > 0) {
+                        html += `
+                            <div class="advice-item medications">
+                                <div class="advice-title">
+                                    <i class="fas fa-pills"></i>
+                                    <span>Recommended Medications</span>
+                                </div>
+                                <ul class="advice-list">
+                        `;
+                        condition.medications.forEach((med) => {
+                            html += `<li>${med}</li>`;
+                        });
+                        html += `</ul></div>`;
+                    }
+
+                    if (condition.precautions && condition.precautions.length > 0) {
+                        html += `
+                            <div class="advice-item precautions">
+                                <div class="advice-title">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span>Precautions</span>
+                                </div>
+                                <ul class="advice-list">
+                        `;
+                        condition.precautions.forEach((precaution) => {
+                            html += `<li>${precaution}</li>`;
+                        });
+                        html += `</ul></div>`;
+                    }
+
+                    if (condition.treatment && condition.treatment.length > 0) {
+                        html += `
+                            <div class="advice-item treatment">
+                                <div class="advice-title">
+                                    <i class="fas fa-hand-holding-medical"></i>
+                                    <span>Treatment</span>
+                                </div>
+                                <ul class="advice-list">
+                        `;
+                        condition.treatment.forEach((treatment) => {
+                            html += `<li>${treatment}</li>`;
+                        });
+                        html += `</ul></div>`;
+                    }
+
+                    if (condition.diet && condition.diet.length > 0) {
+                        html += `
+                            <div class="advice-item diet">
+                                <div class="advice-title">
+                                    <i class="fas fa-apple-alt"></i>
+                                    <span>Dietary Suggestions</span>
+                                </div>
+                                <ul class="advice-list">
+                        `;
+                        condition.diet.forEach((diet) => {
+                            html += `<li>${diet}</li>`;
+                        });
+                        html += `</ul></div>`;
+                    }
+
+                    if (condition.doctor_consultation) {
+                        html += `
+                            <div class="advice-item doctor">
+                                <div class="advice-title">
+                                    <i class="fas fa-user-md"></i>
+                                    <span>When to See a Doctor</span>
+                                </div>
+                                <p style="margin: 0; line-height: 1.6; color: var(--text-secondary);">${condition.doctor_consultation}</p>
+                            </div>
+                        `;
+                    }
+
+                    html += `</div></div>`;
+                });
+            } else {
+                html += `<p>I couldn't identify specific symptoms from your message. Please try describing your symptoms more clearly, such as "I have a headache" or "I'm experiencing fever and cough".</p>`;
+            }
+
+            if (advice.disclaimer) {
+                html += `
+                    <div class="disclaimer-box" style="margin-top: 1rem;">
+                        <h4><i class="fas fa-info-circle"></i> Note</h4>
+                        <p>${advice.disclaimer}</p>
+                    </div>
+                `;
+            }
+
+            html += `</div></div>`;
+
+            adviceDiv.innerHTML = html;
+            chatMessages.appendChild(adviceDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showLoading() {
+            const chatMessages = document.getElementById('chatMessages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message bot-message loading-message';
+            loadingDiv.innerHTML = `
+                <div class="message-content">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <span>Analyzing your symptoms...</span>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(loadingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideLoading() {
+            const loadingMessage = document.querySelector('.loading-message');
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+        }
+
+        async function toggleVoiceRecording() {
+            const voiceBtn = document.getElementById('voiceBtn');
+
+            if (!isRecording) {
+                try {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(mediaStream);
+                    audioChunks = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        await sendVoiceMessage(audioBlob);
+                    };
+
+                    mediaRecorder.start();
+                    isRecording = true;
+
+                    voiceBtn.classList.add('recording');
+                    voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
+                    voiceBtn.title = 'Stop Recording';
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                    alert('Unable to access microphone. Please check your permissions.');
+                }
+            } else {
+                mediaRecorder.stop();
+                mediaStream.getTracks().forEach((track) => track.stop());
+
+                isRecording = false;
+
+                voiceBtn.classList.remove('recording');
+                voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                voiceBtn.title = 'Voice Input';
+            }
+        }
+
+        async function sendVoiceMessage(audioBlob) {
+            showLoading();
+
+            try {
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'audio.wav');
+
+                const response = await fetch('/voice-to-text', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    document.getElementById('messageInput').value = data.text;
+                    autoResize(document.getElementById('messageInput'));
+                    sendMessage();
+                } else {
+                    addMessage("Sorry, I couldn't understand the audio. Please try again.", 'bot');
+                }
+            } catch (error) {
+                hideLoading();
+                addMessage('Error processing voice input. Please try again.', 'bot');
+                console.error('Voice error:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('messageInput').focus();
+        });
+    </script>
+</body>
+</html>

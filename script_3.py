@@ -1,4 +1,23 @@
+# Create requirements.txt file
+requirements = '''
+Flask==2.3.3
+Flask-CORS==4.0.0
+pandas==1.5.3
+numpy==1.24.3
+SpeechRecognition==3.10.0
+pyttsx3==2.90
+gTTS==2.3.2
+pyaudio==0.2.11
+requests==2.31.0
+'''
 
+with open('requirements.txt', 'w') as f:
+    f.write(requirements.strip())
+
+print("requirements.txt created successfully!")
+
+# Create setup instructions
+setup_instructions = '''
 # Enhanced AI Healthcare Chatbot - Setup Instructions
 
 ## Overview
@@ -40,7 +59,7 @@ python -m venv healthcare_chatbot
 
 # Activate virtual environment
 # On Windows:
-healthcare_chatbot\Scripts\activate
+healthcare_chatbot\\Scripts\\activate
 # On macOS/Linux:
 source healthcare_chatbot/bin/activate
 ```
@@ -167,4 +186,44 @@ If you encounter any issues:
 4. Check console/terminal for error messages
 
 Happy chatting with your AI Healthcare Assistant! 🏥🤖
-# my_ai_chatbot
+'''
+
+with open('README.md', 'w', encoding='utf-8') as f:
+    f.write(setup_instructions)
+
+print("\nREADME.md with detailed setup instructions created!")
+
+# Create a simple run script for easier execution
+run_script = '''@echo off
+echo Starting Enhanced AI Healthcare Chatbot...
+echo.
+echo Make sure you have installed all requirements using:
+echo pip install -r requirements.txt
+echo.
+echo The application will start on http://localhost:5000
+echo.
+pause
+python app.py
+'''
+
+with open('run.bat', 'w') as f:
+    f.write(run_script)
+
+# Create Linux/Mac run script
+run_script_unix = '''#!/bin/bash
+echo "Starting Enhanced AI Healthcare Chatbot..."
+echo ""
+echo "Make sure you have installed all requirements using:"
+echo "pip install -r requirements.txt"
+echo ""
+echo "The application will start on http://localhost:5000"
+echo ""
+read -p "Press Enter to continue..."
+python app.py
+'''
+
+with open('run.sh', 'w') as f:
+    f.write(run_script_unix)
+
+print("Run scripts created (run.bat for Windows, run.sh for Mac/Linux)")
+print("\nAll files are ready! The user can now run the enhanced healthcare chatbot.")
