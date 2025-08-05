@@ -1,10 +1,15 @@
 #!/bin/bash
 echo "Starting Enhanced AI Healthcare Chatbot..."
 echo ""
-echo "Make sure you have installed all requirements using:"
-echo "pip install -r requirements.txt"
-echo ""
-echo "The application will start on http://localhost:5000"
+
+# Navigate to the project directory
+cd "$(dirname "$0")"
+
+# Activate virtual environment
+echo "📦 Activating virtual environment..."
+source healthcare_env/bin/activate
+
+echo "The application will start on http://localhost:5001"
 echo ""
 read -p "Press Enter to continue..."
 python app.py

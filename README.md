@@ -168,3 +168,15 @@ If you encounter any issues:
 
 Happy chatting with your AI Healthcare Assistant! 🏥🤖
 # my_ai_chatbot
+
+
+
+
+
+cd /Users/quanteondev/Downloads/Arc_AI_Chatbot-main
+chmod +x run.sh
+./run.sh
+
+cd /Users/quanteondev/Downloads/Arc_AI_Chatbot-main
+source healthcare_env/bin/activate
+python app.py

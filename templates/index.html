@@ -272,6 +272,28 @@
             }
         }
 
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+
         .user-message {
             margin-left: auto;
         }
@@ -524,6 +546,13 @@
         .btn.recording {
             background: var(--danger);
             animation: pulse 1s infinite;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+            transform: scale(1.1);
+        }
+
+        .btn.voice-enabled {
+            background: var(--success);
+            color: white;
         }
 
         .loading {
@@ -640,6 +669,15 @@
                 flex-direction: column;
                 align-items: stretch;
             }
+
+            .status-indicator {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            #languageIndicator {
+                margin-left: 0 !important;
+            }
         }
     </style>
 </head>
@@ -711,6 +749,9 @@
                 <div class="status-indicator">
                     <div class="status-dot"></div>
                     <span>AI Assistant Online</span>
+                    <span id="languageIndicator" style="margin-left: 1rem; font-size: 0.75rem; color: var(--text-muted);">
+                        Language: <span id="currentLangDisplay">English</span>
+                    </span>
                 </div>
             </div>
 
@@ -742,6 +783,9 @@
                         <button class="btn btn-secondary" id="voiceBtn" onclick="toggleVoiceRecording()" title="Voice Input">
                             <i class="fas fa-microphone"></i>
                         </button>
+                        <button class="btn btn-secondary" id="voiceToggleBtn" onclick="toggleVoiceOutput()" title="Toggle Voice Output">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
                         <button class="btn btn-primary" onclick="sendMessage()">
                             <i class="fas fa-paper-plane"></i>
                         </button>
@@ -753,18 +797,31 @@
 
     <script>
         let currentLanguage = 'english';
+        let detectedLanguage = 'english';
         let isRecording = false;
         let mediaRecorder;
         let mediaStream;
         let audioChunks = [];
+        let voiceEnabled = true;
+        let currentAudio = null; // Track current playing audio
 
         document.querySelectorAll('.lang-btn').forEach((btn) => {
             btn.addEventListener('click', function () {
                 document.querySelectorAll('.lang-btn').forEach((b) => b.classList.remove('active'));
                 this.classList.add('active');
                 currentLanguage = this.dataset.lang;
+                updateLanguageDisplay();
             });
         });
+
+        function updateLanguageDisplay() {
+            const langNames = {
+                'english': 'English',
+                'hindi': 'हिन्दी',
+                'kannada': 'ಕನ್ನಡ'
+            };
+            document.getElementById('currentLangDisplay').textContent = langNames[currentLanguage] || 'English';
+        }
 
         function autoResize(textarea) {
             textarea.style.height = 'auto';
@@ -820,8 +877,10 @@
                 if (data.success) {
                     if (data.is_conversational) {
                         addMessage(data.response.message, 'bot');
+                        // No voice response for text input - only for voice input
                     } else {
                         addMedicalAdvice(data.response);
+                        // No voice response for text input - only for voice input
                     }
                 } else {
                     addMessage('Sorry, I encountered an error: ' + data.error, 'bot');
@@ -982,15 +1041,18 @@
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
-        function showLoading() {
+        function showLoading(isVoiceInput = false) {
             const chatMessages = document.getElementById('chatMessages');
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'message bot-message loading-message';
+            
+            const loadingText = isVoiceInput ? 'Processing your voice input...' : 'Analyzing your symptoms...';
+            
             loadingDiv.innerHTML = `
                 <div class="message-content">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <span>Analyzing your symptoms...</span>
+                        <span>${loadingText}</span>
                     </div>
                 </div>
             `;
@@ -1028,7 +1090,10 @@
 
                     voiceBtn.classList.add('recording');
                     voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
-                    voiceBtn.title = 'Stop Recording';
+                    voiceBtn.title = 'Stop Recording - Click to stop';
+                    
+                    // Add visual feedback
+                    voiceBtn.style.animation = 'pulse 1s infinite';
                 } catch (error) {
                     console.error('Error accessing microphone:', error);
                     alert('Unable to access microphone. Please check your permissions.');
@@ -1041,12 +1106,13 @@
 
                 voiceBtn.classList.remove('recording');
                 voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
-                voiceBtn.title = 'Voice Input';
+                voiceBtn.title = 'Voice Input - Click to start recording';
+                voiceBtn.style.animation = 'none';
             }
         }
 
         async function sendVoiceMessage(audioBlob) {
-            showLoading();
+            showLoading(true); // Show voice-specific loading
 
             try {
                 const formData = new FormData();
@@ -1061,9 +1127,70 @@
                 hideLoading();
 
                 if (data.success) {
-                    document.getElementById('messageInput').value = data.text;
+                    const voiceText = data.text;
+                    document.getElementById('messageInput').value = voiceText;
                     autoResize(document.getElementById('messageInput'));
-                    sendMessage();
+                    
+                    // Update detected language and show language change notification
+                    if (data.detected_language) {
+                        const previousLanguage = detectedLanguage;
+                        detectedLanguage = data.detected_language;
+                        
+                        // Update language button to match detected language
+                        updateLanguageButton(detectedLanguage);
+                        
+                        // Show language change notification if language changed
+                        if (previousLanguage !== detectedLanguage) {
+                            showLanguageChangeNotification(data.language_name || detectedLanguage);
+                        }
+                    }
+                    
+                    // Add user message
+                    addMessage(voiceText, 'user');
+                    document.getElementById('messageInput').value = '';
+                    document.getElementById('messageInput').style.height = 'auto';
+
+                    showLoading(true); // Show voice-specific loading for chat response
+
+                    // Send the voice message to get response
+                    try {
+                        const chatResponse = await fetch('/chat', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                message: voiceText,
+                                language: detectedLanguage,
+                            }),
+                        });
+
+                        const chatData = await chatResponse.json();
+                        hideLoading();
+
+                        if (chatData.success) {
+                            if (chatData.is_conversational) {
+                                addMessage(chatData.response.message, 'bot');
+                                // Generate voice response for voice input
+                                if (voiceEnabled) {
+                                    generateVoiceResponse(chatData.response.message, detectedLanguage);
+                                }
+                            } else {
+                                addMedicalAdvice(chatData.response);
+                                // Generate voice response for medical advice from voice input
+                                if (voiceEnabled && chatData.response.conditions && chatData.response.conditions.length > 0) {
+                                    const summary = generateMedicalSummary(chatData.response);
+                                    generateVoiceResponse(summary, detectedLanguage);
+                                }
+                            }
+                        } else {
+                            addMessage('Sorry, I encountered an error: ' + chatData.error, 'bot');
+                        }
+                    } catch (chatError) {
+                        hideLoading();
+                        addMessage("Sorry, I'm having trouble connecting. Please try again.", 'bot');
+                        console.error('Chat error:', chatError);
+                    }
                 } else {
                     addMessage("Sorry, I couldn't understand the audio. Please try again.", 'bot');
                 }
@@ -1072,6 +1199,214 @@
                 addMessage('Error processing voice input. Please try again.', 'bot');
                 console.error('Voice error:', error);
             }
+        }
+
+        function updateLanguageButton(language) {
+            document.querySelectorAll('.lang-btn').forEach((btn) => {
+                btn.classList.remove('active');
+                if (btn.dataset.lang === language) {
+                    btn.classList.add('active');
+                    currentLanguage = language;
+                }
+            });
+            updateLanguageDisplay();
+        }
+
+        function showLanguageChangeNotification(languageName) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = 'language-notification';
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <i class="fas fa-language"></i>
+                    <span>Language detected: ${languageName}</span>
+                </div>
+            `;
+            
+            // Add styles
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--gradient-primary);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: var(--shadow-lg);
+                z-index: 1000;
+                animation: slideInRight 0.3s ease;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            `;
+            
+            // Add to body
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        function toggleVoiceOutput() {
+            voiceEnabled = !voiceEnabled;
+            const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+            
+            if (voiceEnabled) {
+                voiceToggleBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                voiceToggleBtn.title = 'Voice Output Enabled';
+                voiceToggleBtn.style.background = 'var(--success)';
+                voiceToggleBtn.style.color = 'white';
+            } else {
+                // Stop any currently playing audio
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                    currentAudio = null;
+                }
+                
+                voiceToggleBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                voiceToggleBtn.title = 'Voice Output Disabled';
+                voiceToggleBtn.style.background = 'var(--bg-secondary)';
+                voiceToggleBtn.style.color = 'var(--text-secondary)';
+            }
+        }
+
+        async function generateVoiceResponse(text, language) {
+            try {
+                // Show voice processing indicator
+                const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+                const originalContent = voiceToggleBtn.innerHTML;
+                voiceToggleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                voiceToggleBtn.title = 'Generating voice response...';
+                
+                const response = await fetch('/voice-response', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        detected_language: language
+                    }),
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    playAudio(data.audio);
+                }
+                
+                // Restore button state
+                setTimeout(() => {
+                    if (voiceEnabled) {
+                        voiceToggleBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                        voiceToggleBtn.title = 'Voice Output Enabled';
+                    } else {
+                        voiceToggleBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                        voiceToggleBtn.title = 'Voice Output Disabled';
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error generating voice response:', error);
+                // Restore button state on error
+                const voiceToggleBtn = document.getElementById('voiceToggleBtn');
+                if (voiceEnabled) {
+                    voiceToggleBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+                    voiceToggleBtn.title = 'Voice Output Enabled';
+                } else {
+                    voiceToggleBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+                    voiceToggleBtn.title = 'Voice Output Disabled';
+                }
+            }
+        }
+
+        function playAudio(audioBase64) {
+            // Stop any currently playing audio
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            
+            // Only play if voice is enabled
+            if (!voiceEnabled) {
+                return;
+            }
+            
+            currentAudio = new Audio('data:audio/mp3;base64,' + audioBase64);
+            currentAudio.play().catch(error => {
+                console.error('Error playing audio:', error);
+                currentAudio = null;
+            });
+            
+            // Clear reference when audio finishes
+            currentAudio.onended = function() {
+                currentAudio = null;
+            };
+        }
+
+        function generateMedicalSummary(medicalAdvice) {
+            if (!medicalAdvice.conditions || medicalAdvice.conditions.length === 0) {
+                return "I couldn't identify specific symptoms from your message. Please try describing your symptoms more clearly.";
+            }
+
+            // Language-specific summaries
+            const summaries = {
+                'english': {
+                    start: "Based on your symptoms, here's my analysis: ",
+                    medication: "Recommended medications include: ",
+                    precautions: "Take these precautions: ",
+                    additional: "Additionally, ",
+                    end: "Please consult a healthcare professional for proper diagnosis and treatment."
+                },
+                'hindi': {
+                    start: "आपके लक्षणों के आधार पर, यहां मेरा विश्लेषण है: ",
+                    medication: "अनुशंसित दवाएं हैं: ",
+                    precautions: "ये सावधानियां बरतें: ",
+                    additional: "इसके अलावा, ",
+                    end: "उचित निदान और उपचार के लिए कृपया किसी स्वास्थ्य पेशेवर से सलाह लें।"
+                },
+                'kannada': {
+                    start: "ನಿಮ್ಮ ಲಕ್ಷಣಗಳ ಆಧಾರದ ಮೇಲೆ, ಇಲ್ಲಿ ನನ್ನ ವಿಶ್ಲೇಷಣೆ: ",
+                    medication: "ಶಿಫಾರಸು ಮಾಡಿದ ಔಷಧಿಗಳು: ",
+                    precautions: "ಈ ಮುನ್ನೆಚ್ಚರಿಕೆಗಳನ್ನು ತೆಗೆದುಕೊಳ್ಳಿ: ",
+                    additional: "ಹೆಚ್ಚುವರಿಯಾಗಿ, ",
+                    end: "ಸರಿಯಾದ ರೋಗನಿರ್ಣಯ ಮತ್ತು ಚಿಕಿತ್ಸೆಗಾಗಿ ದಯವಿಟ್ಟು ಆರೋಗ್ಯ ವೃತ್ತಿಪರರನ್ನು ಸಂಪರ್ಕಿಸಿ."
+                }
+            };
+
+            const lang = detectedLanguage || 'english';
+            const template = summaries[lang] || summaries['english'];
+            
+            let summary = template.start;
+            
+            medicalAdvice.conditions.forEach((condition, index) => {
+                summary += `${condition.symptom} may indicate ${condition.disease}. `;
+                
+                if (condition.medications && condition.medications.length > 0) {
+                    summary += `${template.medication}${condition.medications.slice(0, 2).join(', ')}. `;
+                }
+                
+                if (condition.precautions && condition.precautions.length > 0) {
+                    summary += `${template.precautions}${condition.precautions.slice(0, 2).join(', ')}. `;
+                }
+                
+                if (index < medicalAdvice.conditions.length - 1) {
+                    summary += template.additional;
+                }
+            });
+            
+            summary += template.end;
+            
+            return summary;
         }
 
         document.addEventListener('DOMContentLoaded', function () {
